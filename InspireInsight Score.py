@@ -73,9 +73,50 @@ def get_forbes_growth_stocks():
     
     return tickers
 
+def get_fool_growth_stocks():
+    # Initialize WebDriver with options to suppress output and run headless
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_argument("--headless")  # Run in headless mode
+    chrome_options.add_argument("--log-level=3")  # Suppress output
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--no-sandbox")
+    driver = webdriver.Chrome(options=chrome_options)  # Suppress more output
+    
+    tickers = []
+    
+    try:
+        # Open the Motley Fool URL
+        driver.get("https://www.fool.com/investing/stock-market/types-of-stocks/growth-stocks/")
+        
+        # Wait for the stock elements to load
+        stock_elements = WebDriverWait(driver, 10).until(
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, "table tbody tr th a"))
+        )
+        
+        # Extract the ticker symbols from the 'a' tags within the table rows
+        for element in stock_elements:
+            href = element.get_attribute("href")
+            ticker = href.split("/")[-2].split(":")[-1]
+            tickers.append(ticker)
+    
+    except TimeoutException:
+        print("Timeout occurred while waiting for the Motley Fool page to load.")
+    
+    finally:
+        driver.quit()
+    
+    return tickers
+
 def main():
     # Get the list of Forbes growth stocks
-    tickers = get_forbes_growth_stocks()
+    forbes_tickers = get_forbes_growth_stocks()
+    
+    # Get the list of Motley Fool growth stocks
+    fool_tickers = get_fool_growth_stocks()
+    
+    # Combine both lists, removing duplicates
+    tickers = list(set(forbes_tickers + fool_tickers))
     
     # Get the Inspire Insight Score for each ticker
     scores = {}
