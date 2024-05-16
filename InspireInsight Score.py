@@ -4,9 +4,17 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 import time
+import os
 
 def get_inspire_insight_score(ticker):
-    driver = webdriver.Chrome()  # Initialize WebDriver
+    # Initialize WebDriver with options to suppress output and run headless
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_argument("--headless")  # Run in headless mode
+    chrome_options.add_argument("--log-level=3")  # Suppress output
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--no-sandbox")
+    driver = webdriver.Chrome(options=chrome_options)  # Suppress more output
     
     try:
         # Open the URL
@@ -30,7 +38,15 @@ def get_inspire_insight_score(ticker):
     return score
 
 def get_forbes_growth_stocks():
-    driver = webdriver.Chrome()  # Initialize WebDriver
+    # Initialize WebDriver with options to suppress output and run headless
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_argument("--headless")  # Run in headless mode
+    chrome_options.add_argument("--log-level=3")  # Suppress output
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--no-sandbox")
+    driver = webdriver.Chrome(options=chrome_options)  # Suppress more output
+    
     tickers = []
     
     try:
@@ -65,11 +81,12 @@ def main():
     scores = {}
     for ticker in tickers:
         score = get_inspire_insight_score(ticker)
-        scores[ticker] = score
+        if score is not None and score.isdigit() and int(score) > 0:
+            scores[ticker] = score
         # Adding sleep to prevent being blocked by too many requests in a short time
         time.sleep(1)
     
-    # Output the results
+    # Output the results for positive scores
     for ticker, score in scores.items():
         print(f"{ticker}: {score}")
 
