@@ -23,11 +23,8 @@ function tis_fetch_growth_stocks() {
     // Combine the two lists of stocks
     $all_stocks = array_merge($forbes_stocks, $motley_fool_stocks);
 
-    // Get the inspire scores for each stock
-    $growth_stocks = tis_get_inspire_scores($all_stocks);
-
-    // Save the information in the database
-    tis_save_growth_stocks($growth_stocks);
+    // Get the inspire scores for each stock and save them
+    tis_save_positive_growth_stocks($all_stocks);
 }
 
 function tis_get_forbes_growth_stocks() {
@@ -53,7 +50,7 @@ function tis_get_forbes_growth_stocks() {
             if (isset($parts[1])) {
                 $ticker = trim(explode(')', $parts[1])[0]);
                 if (!empty($ticker)) {
-                    $tickers[] = $ticker;
+                    $tickers[] = ['ticker' => $ticker, 'source' => 'Forbes'];
                 }
             }
         }
@@ -86,7 +83,7 @@ function tis_get_motley_fool_growth_stocks() {
             if (isset($ticker_parts[1])) {
                 $ticker = $ticker_parts[1];
                 if (!empty($ticker)) {
-                    $tickers[] = $ticker;
+                    $tickers[] = ['ticker' => $ticker, 'source' => 'Motley Fool'];
                 }
             }
         }
@@ -111,13 +108,16 @@ function tis_get_inspire_scores($tickers) {
     $table_name = $wpdb->prefix . 'ticker_insight_scores';
 
     $growth_stocks = [];
-    foreach ($tickers as $ticker) {
+    foreach ($tickers as $entry) {
+        $ticker = $entry['ticker'];
+        $source = $entry['source'];
         $result = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_name WHERE ticker = %s", $ticker));
         if ($result) {
             $growth_stocks[] = [
                 'ticker' => $ticker,
                 'score' => $result->score,
-                'update_date' => $result->update_date
+                'update_date' => $result->update_date,
+                'source' => $source
             ];
         }
     }
@@ -125,20 +125,38 @@ function tis_get_inspire_scores($tickers) {
     return $growth_stocks;
 }
 
-function tis_save_growth_stocks($growth_stocks) {
+function tis_save_positive_growth_stocks($growth_stocks) {
     global $wpdb;
     $table_name = $wpdb->prefix . 'growth_stocks';
 
-    foreach ($growth_stocks as $stock) {
-        $result = $wpdb->replace($table_name, [
-            'ticker' => $stock['ticker'],
-            'score' => $stock['score'],
-            'update_date' => $stock['update_date'],
-            'month_year' => date('F Y')
-        ]);
+    // Clear out old growth stock information
+    $wpdb->query("TRUNCATE TABLE $table_name");
 
-        if ($result === false) {
-            error_log("Failed to insert/update growth stock: {$stock['ticker']}");
+    foreach ($growth_stocks as $stock) {
+        if ($stock['score'] > 0) {
+            // Check if the ticker already exists
+            $existing_stock = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_name WHERE ticker = %s", $stock['ticker']));
+            if ($existing_stock) {
+                // If it exists, update the source if not already included
+                $new_source = $existing_stock->source;
+                if (strpos($existing_stock->source, $stock['source']) === false) {
+                    $new_source .= ', ' . $stock['source'];
+                }
+                $wpdb->update(
+                    $table_name,
+                    ['source' => $new_source],
+                    ['ticker' => $stock['ticker']]
+                );
+            } else {
+                // If it doesn't exist, insert a new row
+                $wpdb->replace($table_name, [
+                    'ticker' => $stock['ticker'],
+                    'score' => $stock['score'],
+                    'update_date' => $stock['update_date'],
+                    'month_year' => date('F Y'),
+                    'source' => $stock['source']
+                ]);
+            }
         }
     }
 }
