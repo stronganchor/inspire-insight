@@ -55,6 +55,7 @@ function tis_create_database_tables() {
         score float NOT NULL,
         update_date datetime NOT NULL,
         month_year varchar(20) NOT NULL,
+        source varchar(255) NOT NULL,
         PRIMARY KEY (id)
     ) $charset_collate;";
     dbDelta($sql);
