@@ -49,8 +49,13 @@ function tis_get_forbes_growth_stocks() {
     foreach ($nodes as $node) {
         $text = $node->textContent;
         if (strpos($text, '(') !== false && strpos($text, ')') !== false) {
-            $ticker = trim(explode('(', explode(')', $text)[0])[1]);
-            $tickers[] = $ticker;
+            $parts = explode('(', $text);
+            if (isset($parts[1])) {
+                $ticker = trim(explode(')', $parts[1])[0]);
+                if (!empty($ticker)) {
+                    $tickers[] = $ticker;
+                }
+            }
         }
     }
 
@@ -75,8 +80,16 @@ function tis_get_motley_fool_growth_stocks() {
     $tickers = [];
     foreach ($nodes as $node) {
         $href = $node->getAttribute("href");
-        $ticker = explode(":", explode("/", $href)[-2])[1];
-        $tickers[] = $ticker;
+        $parts = explode("/", $href);
+        if (isset($parts[-2])) {
+            $ticker_parts = explode(":", $parts[-2]);
+            if (isset($ticker_parts[1])) {
+                $ticker = $ticker_parts[1];
+                if (!empty($ticker)) {
+                    $tickers[] = $ticker;
+                }
+            }
+        }
     }
 
     return $tickers;
