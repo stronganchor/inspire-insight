@@ -147,7 +147,7 @@ function tis_save_positive_growth_stocks($growth_stocks) {
     $wpdb->query("TRUNCATE TABLE $table_name");
 
     foreach ($growth_stocks as $stock) {
-        if (isset($stock['score']) && $stock['score'] > 0) {
+        if (isset($stock['score']) && is_numeric($stock['score']) && $stock['score'] > 0) {
             // Check if the ticker already exists
             $existing_stock = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_name WHERE ticker = %s", $stock['ticker']));
             if ($existing_stock) {
