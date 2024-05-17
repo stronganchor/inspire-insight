@@ -189,8 +189,9 @@ function tis_display_debug_info($all_stocks, $growth_stocks) {
                 break;
             }
         }
+        $ticker_url = "https://inspireinsight.com/{$stock['ticker']}/US";
         echo '<tr>';
-        echo '<td>' . $stock['ticker'] . '</td>';
+        echo '<td><a href="' . $ticker_url . '" target="_blank">' . $stock['ticker'] . '</a></td>';
         echo '<td>' . $score . '</td>';
         echo '<td>' . $stock['source'] . '</td>';
         echo '</tr>';
