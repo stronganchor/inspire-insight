@@ -3,7 +3,7 @@
  * Plugin Name: Ticker Insight Score
  * Description: A plugin to manage and display stock tickers with their inspire insight scores.
  * Version: 1.0
- * Author: Your Name
+ * Author: Strong Anchor Tech
  */
 
 if (!defined('ABSPATH')) {
@@ -15,13 +15,15 @@ add_action('admin_menu', 'tis_add_admin_pages');
 
 function tis_add_admin_pages() {
     add_menu_page('Ticker Insight Score', 'Ticker Insight Score', 'manage_options', 'tis-main-menu', 'tis_upload_page', 'dashicons-chart-line', 6);
-    add_submenu_page('tis-main-menu', 'Upload Spreadsheet', 'Upload Spreadsheet', 'manage_options', 'tis-upload-spreadsheet', 'tis_upload_page');
+    add_submenu_page('tis-main-menu', 'Upload CSV', 'Upload CSV', 'manage_options', 'tis-upload-spreadsheet', 'tis_upload_page');
     add_submenu_page('tis-main-menu', 'View Tickers', 'View Tickers', 'manage_options', 'tis-view-tickers', 'tis_view_page');
+    add_submenu_page('tis-main-menu', 'Add/Edit Ticker', 'Add/Edit Ticker', 'manage_options', 'tis-manual-ticker', 'tis_manual_page');
 }
 
 // Include required files
 include_once plugin_dir_path(__FILE__) . 'includes/tis-upload.php';
 include_once plugin_dir_path(__FILE__) . 'includes/tis-view.php';
+include_once plugin_dir_path(__FILE__) . 'includes/tis-manual.php';
 
 // Register activation hook to create database table
 register_activation_hook(__FILE__, 'tis_create_database_table');
@@ -36,7 +38,7 @@ function tis_create_database_table() {
         id mediumint(9) NOT NULL AUTO_INCREMENT,
         ticker varchar(10) NOT NULL,
         score float NOT NULL,
-        update_date date NOT NULL,
+        update_date datetime NOT NULL,
         PRIMARY KEY (id)
     ) $charset_collate;";
 
