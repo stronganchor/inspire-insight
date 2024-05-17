@@ -12,7 +12,7 @@ function tis_growth_stocks_shortcode() {
 
     $current_month_year = date('F Y');
     $output = '<h2>Recommended Growth Stocks for ' . $current_month_year . '</h2>';
-    $output += '<table class="wp-list-table widefat fixed striped">';
+    $output .= '<table class="wp-list-table widefat fixed striped">';
     $output .= '<thead><tr><th>Ticker</th><th>Score</th><th>Update Date</th><th>Month/Year</th><th>Source</th></tr></thead><tbody>';
 
     foreach ($results as $row) {
