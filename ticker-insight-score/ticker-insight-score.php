@@ -19,6 +19,7 @@ function tis_add_admin_pages() {
     add_submenu_page('tis-main-menu', 'View Tickers', 'View Tickers', 'manage_options', 'tis-view-tickers', 'tis_view_page');
     add_submenu_page('tis-main-menu', 'Add/Edit Ticker', 'Add/Edit Ticker', 'manage_options', 'tis-manual-ticker', 'tis_manual_page');
     add_submenu_page('tis-main-menu', 'Fetch Growth Stocks', 'Fetch Growth Stocks', 'manage_options', 'tis-growth-stocks', 'tis_growth_stocks_page');
+    add_submenu_page('tis-main-menu', 'Settings', 'Settings', 'manage_options', 'tis-settings', 'tis_settings_page');
 }
 
 // Include required files
@@ -27,6 +28,7 @@ include_once plugin_dir_path(__FILE__) . 'includes/tis-view.php';
 include_once plugin_dir_path(__FILE__) . 'includes/tis-manual.php';
 include_once plugin_dir_path(__FILE__) . 'includes/tis-growth-stocks.php';
 include_once plugin_dir_path(__FILE__) . 'includes/tis-shortcode.php';
+include_once plugin_dir_path(__FILE__) . 'includes/tis-settings.php';
 
 // Register activation hook to create database tables
 register_activation_hook(__FILE__, 'tis_create_database_tables');
