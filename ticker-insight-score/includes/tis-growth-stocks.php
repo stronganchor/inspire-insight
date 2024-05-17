@@ -24,7 +24,13 @@ function tis_fetch_growth_stocks() {
     $all_stocks = array_merge($forbes_stocks, $motley_fool_stocks);
 
     // Get the inspire scores for each stock and save them
-    tis_save_positive_growth_stocks($all_stocks);
+    $growth_stocks = tis_get_inspire_scores($all_stocks);
+
+    // Save the positive growth stocks in the database
+    tis_save_positive_growth_stocks($growth_stocks);
+
+    // Display fetched data for debugging
+    tis_display_debug_info($all_stocks, $growth_stocks);
 }
 
 function tis_get_forbes_growth_stocks() {
@@ -119,6 +125,14 @@ function tis_get_inspire_scores($tickers) {
                 'update_date' => $result->update_date,
                 'source' => $source
             ];
+        } else {
+            // If no score is found, add the ticker with a score of 'Not found'
+            $growth_stocks[] = [
+                'ticker' => $ticker,
+                'score' => 'Not found',
+                'update_date' => 'N/A',
+                'source' => $source
+            ];
         }
     }
 
@@ -133,7 +147,7 @@ function tis_save_positive_growth_stocks($growth_stocks) {
     $wpdb->query("TRUNCATE TABLE $table_name");
 
     foreach ($growth_stocks as $stock) {
-        if ($stock['score'] > 0) {
+        if (isset($stock['score']) && $stock['score'] > 0) {
             // Check if the ticker already exists
             $existing_stock = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_name WHERE ticker = %s", $stock['ticker']));
             if ($existing_stock) {
@@ -159,4 +173,29 @@ function tis_save_positive_growth_stocks($growth_stocks) {
             }
         }
     }
+}
+
+function tis_display_debug_info($all_stocks, $growth_stocks) {
+    echo '<div class="wrap">';
+    echo '<h2>Fetched Growth Stocks</h2>';
+    echo '<table class="wp-list-table widefat fixed striped">';
+    echo '<thead><tr><th>Ticker</th><th>Score</th><th>Source</th></tr></thead><tbody>';
+
+    foreach ($all_stocks as $stock) {
+        $score = 'Not found';
+        foreach ($growth_stocks as $growth_stock) {
+            if ($growth_stock['ticker'] == $stock['ticker']) {
+                $score = $growth_stock['score'];
+                break;
+            }
+        }
+        echo '<tr>';
+        echo '<td>' . $stock['ticker'] . '</td>';
+        echo '<td>' . $score . '</td>';
+        echo '<td>' . $stock['source'] . '</td>';
+        echo '</tr>';
+    }
+
+    echo '</tbody></table>';
+    echo '</div>';
 }
