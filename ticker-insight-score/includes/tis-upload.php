@@ -25,10 +25,27 @@ function tis_handle_upload() {
             global $wpdb;
             $table_name = $wpdb->prefix . 'ticker_insight_scores';
 
+            // Clear the existing data
+            $wpdb->query("TRUNCATE TABLE $table_name");
+
+            // Get the header row to determine the indices of the required columns
+            $header = fgetcsv($handle, 1000, ',');
+
+            // Normalize the header row
+            $normalized_header = array_map('strtolower', array_map('trim', $header));
+
+            $ticker_index = array_search('ticker', $normalized_header);
+            $score_index = array_search('upcoming score', $normalized_header);
+
+            if ($ticker_index === FALSE || $score_index === FALSE) {
+                echo '<div class="error"><p>CSV file does not have the required columns: ticker and upcoming score.</p></div>';
+                fclose($handle);
+                return;
+            }
+
             while (($row = fgetcsv($handle, 1000, ',')) !== FALSE) {
-                // Process each row
-                $ticker = $row[0];
-                $score = $row[1];
+                $ticker = $row[$ticker_index];
+                $score = $row[$score_index];
                 $update_date = date('Y-m-d', strtotime("2024-04-01")); // Example date for Q2 2024
 
                 $wpdb->replace($table_name, [
@@ -44,4 +61,3 @@ function tis_handle_upload() {
         }
     }
 }
-
