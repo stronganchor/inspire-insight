@@ -114,16 +114,22 @@ function tis_get_inspire_scores($tickers) {
     $table_name = $wpdb->prefix . 'ticker_insight_scores';
 
     $growth_stocks = [];
+    $api_key = get_option('tis_alpha_vantage_api_key');
+
     foreach ($tickers as $entry) {
         $ticker = $entry['ticker'];
         $source = $entry['source'];
         $result = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_name WHERE ticker = %s", $ticker));
         if ($result) {
+            $company_info = tis_get_company_info($ticker, $api_key);
             $growth_stocks[] = [
                 'ticker' => $ticker,
                 'score' => $result->score,
                 'update_date' => $result->update_date,
-                'source' => $source
+                'source' => $source,
+                'company_name' => $company_info['name'],
+                'cached_price' => $company_info['price'],
+                'price_timestamp' => current_time('mysql')
             ];
         } else {
             // If no score is found, add the ticker with a score of 'Not found'
@@ -131,12 +137,46 @@ function tis_get_inspire_scores($tickers) {
                 'ticker' => $ticker,
                 'score' => 'Not found',
                 'update_date' => 'N/A',
-                'source' => $source
+                'source' => $source,
+                'company_name' => 'N/A',
+                'cached_price' => 'N/A',
+                'price_timestamp' => 'N/A'
             ];
         }
     }
 
     return $growth_stocks;
+}
+
+function tis_get_company_info($ticker, $api_key) {
+    $company_name = 'N/A';
+    $market_price = 'N/A';
+
+    // Fetch company name
+    $name_url = "https://www.alphavantage.co/query?function=OVERVIEW&symbol={$ticker}&apikey={$api_key}";
+    $name_response = file_get_contents($name_url);
+    if ($name_response) {
+        $name_data = json_decode($name_response, true);
+        if (isset($name_data['Name'])) {
+            $company_name = $name_data['Name'];
+        }
+    }
+
+    // Fetch market price
+    $price_url = "https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={$ticker}&apikey={$api_key}";
+    $price_response = file_get_contents($price_url);
+    if ($price_response) {
+        $price_data = json_decode($price_response, true);
+        if (isset($price_data['Global Quote']['05. price'])) {
+            $market_price = number_format((float)$price_data['Global Quote']['05. price'], 2, '.', '');
+            $market_price = '$' . $market_price;
+        }
+    }
+
+    return [
+        'name' => $company_name,
+        'price' => $market_price
+    ];
 }
 
 function tis_save_positive_growth_stocks($growth_stocks) {
@@ -158,7 +198,12 @@ function tis_save_positive_growth_stocks($growth_stocks) {
                 }
                 $wpdb->update(
                     $table_name,
-                    ['source' => $new_source],
+                    [
+                        'source' => $new_source,
+                        'company_name' => $stock['company_name'],
+                        'cached_price' => $stock['cached_price'],
+                        'price_timestamp' => $stock['price_timestamp']
+                    ],
                     ['ticker' => $stock['ticker']]
                 );
             } else {
@@ -168,7 +213,10 @@ function tis_save_positive_growth_stocks($growth_stocks) {
                     'score' => $stock['score'],
                     'update_date' => $stock['update_date'],
                     'month_year' => date('F Y'),
-                    'source' => $stock['source']
+                    'source' => $stock['source'],
+                    'company_name' => $stock['company_name'],
+                    'cached_price' => $stock['cached_price'],
+                    'price_timestamp' => $stock['price_timestamp']
                 ]);
             }
         }
