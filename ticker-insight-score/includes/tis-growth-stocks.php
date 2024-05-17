@@ -31,15 +31,66 @@ function tis_fetch_growth_stocks() {
 }
 
 function tis_get_forbes_growth_stocks() {
-    // Implement the logic to fetch growth stocks from Forbes
-    // Example: return an array of tickers
-    return ['AAPL', 'MSFT', 'GOOGL'];
+    $url = "https://www.forbes.com/advisor/investing/best-growth-stocks/";
+    $html = tis_fetch_html($url);
+
+    if (!$html) {
+        error_log("Failed to fetch Forbes page.");
+        return [];
+    }
+
+    $dom = new DOMDocument();
+    @$dom->loadHTML($html);
+
+    $xpath = new DOMXPath($dom);
+    $nodes = $xpath->query("//td[contains(@class, 'wysiwyg-editor')]//div[contains(@class, 'cell-content')]");
+
+    $tickers = [];
+    foreach ($nodes as $node) {
+        $text = $node->textContent;
+        if (strpos($text, '(') !== false && strpos($text, ')') !== false) {
+            $ticker = trim(explode('(', explode(')', $text)[0])[1]);
+            $tickers[] = $ticker;
+        }
+    }
+
+    return $tickers;
 }
 
 function tis_get_motley_fool_growth_stocks() {
-    // Implement the logic to fetch growth stocks from Motley Fool
-    // Example: return an array of tickers
-    return ['AMZN', 'TSLA', 'FB'];
+    $url = "https://www.fool.com/investing/stock-market/types-of-stocks/growth-stocks/";
+    $html = tis_fetch_html($url);
+
+    if (!$html) {
+        error_log("Failed to fetch Motley Fool page.");
+        return [];
+    }
+
+    $dom = new DOMDocument();
+    @$dom->loadHTML($html);
+
+    $xpath = new DOMXPath($dom);
+    $nodes = $xpath->query("//table/tbody/tr/th/a");
+
+    $tickers = [];
+    foreach ($nodes as $node) {
+        $href = $node->getAttribute("href");
+        $ticker = explode(":", explode("/", $href)[-2])[1];
+        $tickers[] = $ticker;
+    }
+
+    return $tickers;
+}
+
+function tis_fetch_html($url) {
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36');
+    $html = curl_exec($ch);
+    curl_close($ch);
+    return $html;
 }
 
 function tis_get_inspire_scores($tickers) {
@@ -65,13 +116,16 @@ function tis_save_growth_stocks($growth_stocks) {
     global $wpdb;
     $table_name = $wpdb->prefix . 'growth_stocks';
 
-    // Save each growth stock to the database
     foreach ($growth_stocks as $stock) {
-        $wpdb->replace($table_name, [
+        $result = $wpdb->replace($table_name, [
             'ticker' => $stock['ticker'],
             'score' => $stock['score'],
             'update_date' => $stock['update_date'],
             'month_year' => date('F Y')
         ]);
+
+        if ($result === false) {
+            error_log("Failed to insert/update growth stock: {$stock['ticker']}");
+        }
     }
 }
