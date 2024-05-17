@@ -16,7 +16,7 @@ function tis_growth_stocks_shortcode() {
     $output .= '<thead><tr><th>Ticker</th><th>Score</th><th>Source</th></tr></thead><tbody>';
 
     foreach ($results as $row) {
-        if ($row->score != 'Not found') {
+        if (is_numeric($row->score)) {
             $ticker_url = "https://inspireinsight.com/{$row->ticker}/US";
             $output .= '<tr>';
             $output .= "<td><a href='{$ticker_url}' target='_blank'>{$row->ticker}</a></td>";
