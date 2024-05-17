@@ -30,9 +30,6 @@ include_once plugin_dir_path(__FILE__) . 'includes/tis-growth-stocks.php';
 include_once plugin_dir_path(__FILE__) . 'includes/tis-shortcode.php';
 include_once plugin_dir_path(__FILE__) . 'includes/tis-settings.php';
 
-// Register activation hook to create database tables
-register_activation_hook(__FILE__, 'tis_create_database_tables');
-
 function tis_create_database_tables() {
     global $wpdb;
     $charset_collate = $wpdb->get_charset_collate();
@@ -58,10 +55,16 @@ function tis_create_database_tables() {
         update_date datetime NOT NULL,
         month_year varchar(20) NOT NULL,
         source varchar(255) NOT NULL,
+        company_name varchar(255) DEFAULT 'N/A',
+        cached_price varchar(20) DEFAULT 'N/A',
+        price_timestamp datetime DEFAULT NULL,
         PRIMARY KEY (id)
     ) $charset_collate;";
     dbDelta($sql);
 }
+
+// Ensure this is run during plugin activation
+register_activation_hook(__FILE__, 'tis_create_database_tables');
 
 // Enqueue scripts and styles
 add_action('admin_enqueue_scripts', 'tis_enqueue_scripts');
