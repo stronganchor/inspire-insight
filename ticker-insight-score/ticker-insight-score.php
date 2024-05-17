@@ -28,7 +28,6 @@ include_once plugin_dir_path(__FILE__) . 'includes/tis-manual.php';
 include_once plugin_dir_path(__FILE__) . 'includes/tis-growth-stocks.php';
 include_once plugin_dir_path(__FILE__) . 'includes/tis-shortcode.php';
 
-
 // Register activation hook to create database tables
 register_activation_hook(__FILE__, 'tis_create_database_tables');
 
