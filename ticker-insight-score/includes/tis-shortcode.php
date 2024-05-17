@@ -67,7 +67,8 @@ function tis_get_company_info($ticker, $api_key) {
     if ($price_response) {
         $price_data = json_decode($price_response, true);
         if (isset($price_data['Global Quote']['05. price'])) {
-            $market_price = $price_data['Global Quote']['05. price'];
+            $market_price = number_format((float)$price_data['Global Quote']['05. price'], 2, '.', '');
+            $market_price = '$' . $market_price;
         }
     }
 
