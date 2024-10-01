@@ -1,12 +1,27 @@
 <?php
 
 function tis_upload_page() {
+    global $wpdb;
+
+    // Clear the ticker database if the button was clicked
+    if (isset($_POST['clear_database'])) {
+        $table_name = $wpdb->prefix . 'ticker_insight_scores';
+        $wpdb->query("TRUNCATE TABLE $table_name");
+        echo '<div class="updated"><p>The ticker database has been cleared.</p></div>';
+    }
+
     ?>
     <div class="wrap">
         <h2>Upload CSV</h2>
         <form method="post" enctype="multipart/form-data">
             <input type="file" name="tis_csv" accept=".csv">
             <input type="submit" name="upload" class="button button-primary" value="Upload">
+        </form>
+
+        <!-- Button to Clear the Ticker Database -->
+        <h2>Clear Ticker Database</h2>
+        <form method="post">
+            <input type="submit" name="clear_database" class="button button-danger" value="Clear Database">
         </form>
     </div>
     <?php
