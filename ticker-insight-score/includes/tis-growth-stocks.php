@@ -5,12 +5,14 @@ function tis_growth_stocks_page() {
     <div class="wrap">
         <h2>Fetch Growth Stocks</h2>
         <form method="post">
+            <?php wp_nonce_field('tis_fetch_growth_stocks', 'tis_fetch_growth_stocks_nonce'); ?>
             <input type="submit" name="fetch_growth_stocks" class="button button-primary" value="Fetch Growth Stocks">
         </form>
     </div>
     <?php
 
     if (isset($_POST['fetch_growth_stocks'])) {
+        check_admin_referer('tis_fetch_growth_stocks', 'tis_fetch_growth_stocks_nonce');
         tis_fetch_growth_stocks();
     }
 }
@@ -117,8 +119,8 @@ function tis_get_inspire_scores($tickers) {
     $api_key = get_option('tis_alpha_vantage_api_key');
 
     foreach ($tickers as $entry) {
-        $ticker = $entry['ticker'];
-        $source = $entry['source'];
+        $ticker = sanitize_text_field($entry['ticker']);
+        $source = sanitize_text_field($entry['source']);
         $result = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_name WHERE ticker = %s", $ticker));
         if ($result) {
             $company_info = tis_get_company_info($ticker, $api_key);
@@ -153,7 +155,17 @@ function tis_get_company_info($ticker, $api_key) {
     $market_price = 'N/A';
 
     // Fetch company name
-    $name_url = "https://www.alphavantage.co/query?function=OVERVIEW&symbol={$ticker}&apikey={$api_key}";
+    $ticker = sanitize_text_field($ticker);
+    $api_key = sanitize_text_field($api_key);
+
+    $name_url = add_query_arg(
+        [
+            'function' => 'OVERVIEW',
+            'symbol' => $ticker,
+            'apikey' => $api_key
+        ],
+        'https://www.alphavantage.co/query'
+    );
     $name_response = file_get_contents($name_url);
     if ($name_response) {
         $name_data = json_decode($name_response, true);
@@ -163,7 +175,14 @@ function tis_get_company_info($ticker, $api_key) {
     }
 
     // Fetch market price
-    $price_url = "https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={$ticker}&apikey={$api_key}";
+    $price_url = add_query_arg(
+        [
+            'function' => 'GLOBAL_QUOTE',
+            'symbol' => $ticker,
+            'apikey' => $api_key
+        ],
+        'https://www.alphavantage.co/query'
+    );
     $price_response = file_get_contents($price_url);
     if ($price_response) {
         $price_data = json_decode($price_response, true);
@@ -237,11 +256,11 @@ function tis_display_debug_info($all_stocks, $growth_stocks) {
                 break;
             }
         }
-        $ticker_url = "https://inspireinsight.com/{$stock['ticker']}/US";
+        $ticker_url = "https://inspireinsight.com/" . rawurlencode($stock['ticker']) . "/US";
         echo '<tr>';
-        echo '<td><a href="' . $ticker_url . '" target="_blank">' . $stock['ticker'] . '</a></td>';
-        echo '<td>' . $score . '</td>';
-        echo '<td>' . $stock['source'] . '</td>';
+        echo '<td><a href="' . esc_url($ticker_url) . '" target="_blank" rel="noopener noreferrer">' . esc_html($stock['ticker']) . '</a></td>';
+        echo '<td>' . esc_html($score) . '</td>';
+        echo '<td>' . esc_html($stock['source']) . '</td>';
         echo '</tr>';
     }
 

@@ -5,6 +5,7 @@ function tis_manual_page() {
     <div class="wrap">
         <h2>Add/Edit Ticker</h2>
         <form method="post">
+            <?php wp_nonce_field('tis_save_ticker', 'tis_save_ticker_nonce'); ?>
             <table class="form-table">
                 <tr valign="top">
                     <th scope="row">Ticker</th>
@@ -21,6 +22,7 @@ function tis_manual_page() {
     <?php
 
     if (isset($_POST['save_ticker'])) {
+        check_admin_referer('tis_save_ticker', 'tis_save_ticker_nonce');
         tis_handle_manual_save();
     }
 }
@@ -30,15 +32,15 @@ function tis_handle_manual_save() {
         global $wpdb;
         $table_name = $wpdb->prefix . 'ticker_insight_scores';
 
-        $ticker = sanitize_text_field($_POST['ticker']);
-        $score = floatval($_POST['score']);
+        $ticker = sanitize_text_field(wp_unslash($_POST['ticker']));
+        $score = floatval(wp_unslash($_POST['score']));
         $update_date = date('Y-m-d H:i:s'); // Current date and time
 
         $wpdb->replace($table_name, [
             'ticker' => $ticker,
             'score' => $score,
             'update_date' => $update_date
-        ]);
+        ], ['%s', '%f', '%s']);
 
         echo '<div class="updated"><p>Ticker saved successfully.</p></div>';
     } else {

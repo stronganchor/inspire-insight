@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Ticker Insight Score
  * Description: A plugin to manage and display stock tickers with their inspire insight scores.
- * Version: 1.1
+ * Version: 1.1.1
  * Author: Strong Anchor Tech
  */
 
@@ -84,9 +84,14 @@ function tis_filter_tickers_page() {
     
     // Process form submission
     if (isset($_POST['ticker_list'])) {
-        $tickers = explode(',', sanitize_text_field($_POST['ticker_list']));
+        check_admin_referer('tis_filter_tickers', 'tis_filter_tickers_nonce');
+        $tickers = explode(',', sanitize_text_field(wp_unslash($_POST['ticker_list'])));
         $tickers = array_map('trim', $tickers);
-        
+        $tickers = array_filter($tickers);
+
+        if (empty($tickers)) {
+            $results = [];
+        } else {
         // Prepare SQL query to get positive scores
         $table_name = $wpdb->prefix . 'ticker_insight_scores';
         $placeholders = implode(',', array_fill(0, count($tickers), '%s'));
@@ -96,12 +101,14 @@ function tis_filter_tickers_page() {
         );
         
         $results = $wpdb->get_results($sql);
+        }
     }
     
     ?>
     <div class="wrap">
         <h1>Filter Tickers with Positive Scores</h1>
         <form method="post">
+            <?php wp_nonce_field('tis_filter_tickers', 'tis_filter_tickers_nonce'); ?>
             <label for="ticker_list">Enter a list of comma-separated tickers:</label>
             <input type="text" name="ticker_list" id="ticker_list" style="width: 100%;" required>
             <br><br>
